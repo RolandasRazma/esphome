@@ -153,8 +153,9 @@ void DaikinMadoka::gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_c
   }
 }
 
-void DaikinMadoka::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
-                                       esp_ble_gattc_cb_param_t *param) {
+void DaikinMadoka::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param) {
+  ESP_LOGD(TAG, "GATTc event: %d", event);
+  
   switch (event) {
     case ESP_GATTC_DISCONNECT_EVT: {
       this->node_state = espbt::ClientState::IDLE;  // ??
@@ -195,6 +196,7 @@ void DaikinMadoka::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t
     default:
       break;
   }
+
 }
 
 void DaikinMadoka::update() {
