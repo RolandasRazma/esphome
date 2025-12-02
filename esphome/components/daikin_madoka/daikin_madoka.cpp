@@ -315,7 +315,7 @@ void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
 
   switch (function_id) {
     case CMD_GET_SETTING_STATUS:
-      while (i < message_size) {
+      while (i + 1 < message_size) {
         uint8_t argument_id = msg[i++];
         uint8_t len = msg[i++];
         if (argument_id == 0x20) {
@@ -324,11 +324,15 @@ void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
             this->cur_status_.status = val[0];
           }
         }
+        if (i + len > message_size) {
+          ESP_LOGW(TAG, "Invalid message length, breaking");
+          break;
+        }
         i += len;
       }
       break;
     case CMD_GET_OPERATION_MODE:
-      while (i < message_size) {
+      while (i + 1 < message_size) {
         uint8_t argument_id = msg[i++];
         uint8_t len = msg[i++];
         if (argument_id == 0x20) {
@@ -336,6 +340,10 @@ void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
             std::vector<uint8_t> val(msg.begin() + i, msg.begin() + i + len);
             this->cur_status_.mode = val[0];
           }
+        }
+        if (i + len > message_size) {
+          ESP_LOGW(TAG, "Invalid message length, breaking");
+          break;
         }
         i += len;
       }
@@ -370,7 +378,7 @@ void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
       }
       break;
     case CMD_GET_SETPOINT:
-      while (i < message_size) {
+      while (i + 1 < message_size) {
         uint8_t argument_id = msg[i++];
         uint8_t len = msg[i++];
         switch (argument_id) {
@@ -389,12 +397,16 @@ void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
             break;
           }
         }
+        if (i + len > message_size) {
+          ESP_LOGW(TAG, "Invalid message length, breaking");
+          break;
+        }
         i += len;
       }
       break;
     case CMD_GET_FAN_SPEED: {
       uint8_t fan_mode = 255;
-      while (i < message_size) {
+      while (i + 1 < message_size) {
         uint8_t argument_id = msg[i++];
         uint8_t len = msg[i++];
         if (this->cur_status_.mode == 1) {
@@ -403,6 +415,10 @@ void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
           if (i < message_size) {
             fan_mode = msg[i];
           }
+        }
+        if (i + len > message_size) {
+          ESP_LOGW(TAG, "Invalid message length, breaking");
+          break;
         }
         i += len;
       }
@@ -427,7 +443,7 @@ void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
       break;
     }
     case CMD_GET_SENSOR_INFORMATION:
-      while (i < message_size) {
+      while (i + 1 < message_size) {
         uint8_t argument_id = msg[i++];
         uint8_t len = msg[i++];
         if (argument_id == 0x40) {
@@ -435,6 +451,10 @@ void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
             std::vector<uint8_t> val(msg.begin() + i, msg.begin() + i + len);
             this->current_temperature = val[0];
           }
+        }
+        if (i + len > message_size) {
+          ESP_LOGW(TAG, "Invalid message length, breaking");
+          break;
         }
         i += len;
       }
