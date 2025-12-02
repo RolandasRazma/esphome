@@ -211,7 +211,12 @@ void DaikinMadoka::update() {
   }
 }
 
-bool validate_buffer(std::vector<uint8_t> buffer) { return buffer[0] == buffer.size(); }
+bool validate_buffer(std::vector<uint8_t> buffer) {
+  if (buffer.empty()) {
+    return false;
+  }
+  return buffer[0] == buffer.size();
+}
 
 void DaikinMadoka::process_incoming_chunk_(std::vector<uint8_t> chk) {
   if (chk.size() < 2) {
@@ -300,6 +305,10 @@ void DaikinMadoka::query_(uint16_t cmd, std::vector<uint8_t> args, int t_d) {
 }
 
 void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
+  if (msg.size() < 4) {
+    ESP_LOGW(TAG, "Message too short: %d bytes", msg.size());
+    return;
+  }
   uint16_t function_id = msg[2] << 8 | msg[3];
   uint8_t i = 4;
   uint8_t message_size = msg.size();
@@ -310,8 +319,10 @@ void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
         uint8_t argument_id = msg[i++];
         uint8_t len = msg[i++];
         if (argument_id == 0x20) {
-          std::vector<uint8_t> val(msg.begin() + i, msg.begin() + i + len);
-          this->cur_status_.status = val[0];
+          if (len >= 1 && i + len <= message_size) {
+            std::vector<uint8_t> val(msg.begin() + i, msg.begin() + i + len);
+            this->cur_status_.status = val[0];
+          }
         }
         i += len;
       }
@@ -321,8 +332,10 @@ void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
         uint8_t argument_id = msg[i++];
         uint8_t len = msg[i++];
         if (argument_id == 0x20) {
-          std::vector<uint8_t> val(msg.begin() + i, msg.begin() + i + len);
-          this->cur_status_.mode = val[0];
+          if (len >= 1 && i + len <= message_size) {
+            std::vector<uint8_t> val(msg.begin() + i, msg.begin() + i + len);
+            this->cur_status_.mode = val[0];
+          }
         }
         i += len;
       }
@@ -362,13 +375,17 @@ void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
         uint8_t len = msg[i++];
         switch (argument_id) {
           case 0x20: {
-            std::vector<uint8_t> val(msg.begin() + i, msg.begin() + i + len);
-            this->target_temperature_high = (float) (val[0] << 8 | val[1]) / 128;
+            if (len >= 2 && i + len <= message_size) {
+              std::vector<uint8_t> val(msg.begin() + i, msg.begin() + i + len);
+              this->target_temperature_high = (float) (val[0] << 8 | val[1]) / 128;
+            }
             break;
           }
           case 0x21: {
-            std::vector<uint8_t> val(msg.begin() + i, msg.begin() + i + len);
-            this->target_temperature_low = (float) (val[0] << 8 | val[1]) / 128;
+            if (len >= 2 && i + len <= message_size) {
+              std::vector<uint8_t> val(msg.begin() + i, msg.begin() + i + len);
+              this->target_temperature_low = (float) (val[0] << 8 | val[1]) / 128;
+            }
             break;
           }
         }
@@ -383,7 +400,9 @@ void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
         if (this->cur_status_.mode == 1) {
         } else if ((argument_id == 0x21 && len == 1 && this->cur_status_.mode == 4) ||
                    (argument_id == 0x20 && len == 1 && this->cur_status_.mode != 4)) {
-          fan_mode = msg[i];
+          if (i < message_size) {
+            fan_mode = msg[i];
+          }
         }
         i += len;
       }
@@ -412,8 +431,10 @@ void DaikinMadoka::parse_cb_(std::vector<uint8_t> msg) {
         uint8_t argument_id = msg[i++];
         uint8_t len = msg[i++];
         if (argument_id == 0x40) {
-          std::vector<uint8_t> val(msg.begin() + i, msg.begin() + i + len);
-          this->current_temperature = val[0];
+          if (len >= 1 && i + len <= message_size) {
+            std::vector<uint8_t> val(msg.begin() + i, msg.begin() + i + len);
+            this->current_temperature = val[0];
+          }
         }
         i += len;
       }
